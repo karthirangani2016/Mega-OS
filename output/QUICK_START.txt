@@ -1,0 +1,238 @@
+═════════════════════════════════════════════════════════════════
+  MEGA-OS QUICK START GUIDE
+═════════════════════════════════════════════════════════════════
+
+Welcome to Mega-OS 1.0.0 for Amlogic S905X2!
+
+This guide will help you get up and running in minutes.
+
+═════════════════════════════════════════════════════════════════
+  🔰 QUICK STEPS
+═════════════════════════════════════════════════════════════════
+
+1. FLASH THE IMAGE
+   Linux/Mac:
+     sudo dd if=mega-os-s905x2.img of=/dev/sdX bs=4M status=progress sync
+
+   Windows:
+     Use Balena Etcher: https://www.balena.io/etcher/
+
+2. INSERT SD CARD INTO JIO HYBRID C200 V1
+
+3. CONNECT:
+   • HDMI to TV/Monitor
+   • USB Keyboard & Mouse
+   • Power adapter
+
+4. POWER ON AND WAIT 60 SECONDS
+
+5. LOGIN:
+   Username: root
+   Password: 1234
+
+6. LAUNCH FIREFOX:
+   firefox &
+
+═════════════════════════════════════════════════════════════════
+  📦 WHAT'S INCLUDED
+═════════════════════════════════════════════════════════════════
+
+✅ 67 FEATURES PRE-INSTALLED:
+   • Firefox ESR Web Browser (MAIN FEATURE)
+   • XFCE4 Desktop Environment
+   • LibreOffice Suite (Writer, Calc, Impress)
+   • GIMP, Inkscape, Blender, Krita
+   • VLC, FFmpeg, Audacious (Multimedia)
+   • Git, GCC, Python, Node.js (Development)
+   • Docker, Nginx, PostgreSQL (Advanced)
+   • And 50+ more powerful tools!
+
+✅ COLORFUL UI:
+   • Arc Theme (Modern GTK)
+   • Papirus Icons (Beautiful)
+   • Custom Color Scheme
+   • Enhanced Terminal Prompts
+
+✅ ARMBIAN BASE:
+   • Ubuntu 22.04 LTS Stable
+   • Optimized for S905X2
+   • Regular security updates
+   • Community support
+
+═════════════════════════════════════════════════════════════════
+  ⚡ FIRST 5 THINGS TO DO
+═════════════════════════════════════════════════════════════════
+
+1. UPDATE SYSTEM:
+   sudo apt-get update && sudo apt-get upgrade
+
+2. CHANGE PASSWORD:
+   passwd
+
+3. ENABLE SSH (Optional):
+   sudo systemctl enable ssh
+   sudo systemctl start ssh
+
+4. CONNECT TO WIFI (If not using Ethernet):
+   sudo nmtui
+
+5. LAUNCH FIREFOX:
+   firefox &
+
+═════════════════════════════════════════════════════════════════
+  🌐 USING FIREFOX
+═════════════════════════════════════════════════════════════════
+
+Start Firefox:
+   firefox &
+
+Or:
+   Desktop Application Menu → Firefox
+
+You can now:
+   • Browse the web
+   • Stream videos
+   • Use web applications
+   • Download files
+   • Run web-based tools
+
+FF Settings:
+   Preferences → Advanced → Performance
+   Enable hardware acceleration if desired
+
+═════════════════════════════════════════════════════════════════
+  🛠️  INSTALLING NEW PACKAGES
+═════════════════════════════════════════════════════════════════
+
+Search for a package:
+   apt-cache search <keyword>
+
+Install a package:
+   sudo apt-get install <package-name>
+
+Remove a package:
+   sudo apt-get remove <package-name>
+
+Example - Install VLC:
+   sudo apt-get install vlc
+
+═════════════════════════════════════════════════════════════════
+  📚 USEFUL COMMANDS
+═════════════════════════════════════════════════════════════════
+
+System Info:
+   neofetch            (Beautiful system display)
+   uname -a            (Kernel info)
+   free -h             (Memory)
+   df -h               (Disk space)
+   lscpu               (CPU info)
+
+File Management:
+   ls -la              (List files)
+   cd <directory>      (Change directory)
+   cp file dest        (Copy file)
+   mv file dest        (Move file)
+   rm file             (Delete file)
+
+Text Editing:
+   nano <filename>     (Simple editor)
+   vim <filename>      (Advanced editor)
+
+Networking:
+   ping 8.8.8.8        (Test internet)
+   ifconfig            (Network interfaces)
+   nmtui               (Network manager GUI)
+
+Process Management:
+   ps aux              (Show processes)
+   htop                (Interactive monitor)
+   kill <pid>          (Terminate process)
+
+═════════════════════════════════════════════════════════════════
+  🎨 CUSTOMIZING YOUR DESKTOP
+═════════════════════════════════════════════════════════════════
+
+Access Settings:
+   Right-click Desktop → Desktop Settings
+
+Change Theme:
+   Applications → Settings → Appearance
+
+Edit Panel:
+   Right-click Panel → Panel Preferences
+
+Customize Taskbar:
+   Right-click Taskbar → Panel Preferences
+
+Add Applications to Favorites:
+   Right-click App → "Add to Favorites" or "Pin"
+
+═════════════════════════════════════════════════════════════════
+  ❓ TROUBLESHOOTING
+═════════════════════════════════════════════════════════════════
+
+Problem: No video output
+Solution:
+   • Try different HDMI port
+   • Try different HDMI cable
+   • Wait 2+ minutes for boot
+   • Try 1080p or 720p
+
+Problem: Keyboard/Mouse not responding
+Solution:
+   • Try different USB port
+   • Use USB hub
+   • Try Bluetooth peripherals
+   • Reboot device
+
+Problem: No internet
+Solution:
+   sudo systemctl restart NetworkManager
+   sudo nmtui
+
+Problem: Package not found
+Solution:
+   sudo apt-get update
+   sudo apt-get install <package>
+
+Problem: Out of disk space
+Solution:
+   df -h
+   sudo apt-get autoclean
+   Remove unused files/applications
+
+═════════════════════════════════════════════════════════════════
+  📖 ADDITIONAL HELP
+═════════════════════════════════════════════════════════════════
+
+See MEGA_OS_BUILD_INFO.txt for:
+   • Complete feature list (all 67)
+   • Detailed flashing instructions
+   • Serial debugging guide
+   • Advanced configuration
+
+Visit:
+   • Mega-OS GitHub: https://github.com/karthirangani2016/Mega-OS
+   • Armbian: https://www.armbian.com/
+   • Ubuntu Docs: https://help.ubuntu.com/
+
+Command Help:
+   man <command>       (Built-in manual)
+   <command> --help    (Quick help)
+
+═════════════════════════════════════════════════════════════════
+  🎉 ENJOY MEGA-OS!
+═════════════════════════════════════════════════════════════════
+
+You now have a powerful, feature-rich operating system on your
+Jio Hybrid C200 V1 with:
+   ✨ 67 pre-installed features
+   🌐 Firefox web browser
+   🎨 Colorful desktop environment
+   🔧 Complete development tools
+   🎮 Gaming and multimedia
+   ⚡ Lightweight but powerful
+
+Happy computing! 🚀
+
+═════════════════════════════════════════════════════════════════
