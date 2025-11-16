@@ -53,55 +53,27 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create workspace
 WORKDIR /workspace
 
-# Copy build scripts
+# Copy build scripts (main build directory)
 COPY build/ /workspace/build/
-COPY apps/ /workspace/apps/ || true
-COPY sources/ /workspace/sources/ 2>/dev/null || true
+
+# Copy apps directory if it exists
+RUN mkdir -p /workspace/apps
 
 # Make scripts executable
-RUN chmod +x /workspace/build/*.sh
+RUN chmod +x /workspace/build/*.sh || true
 
 # Create output directory
 RUN mkdir -p /workspace/output /workspace/build/logs
 
-# Add entry point script
-RUN cat > /docker-entrypoint.sh << 'ENTRYPOINT'
-#!/bin/bash
-set -e
-
-echo ""
-echo "════════════════════════════════════════════════════════"
-echo "  🐳 Mega-OS Build Docker Container"
-echo "════════════════════════════════════════════════════════"
-echo ""
-echo "This container provides a reproducible build environment"
-echo "for Mega-OS S905X2 (67 features + Firefox)"
-echo ""
-echo "Available commands:"
-echo "  ./build/setup_host.sh      - Setup build environment"
-echo "  ./build/clone_repos.sh     - Clone Armbian + sources"
-echo "  ./build/build_image.sh     - Build Mega-OS image"
-echo ""
-echo "Quick start:"
-echo "  ./build/clone_repos.sh && ./build/build_image.sh"
-echo ""
-echo "════════════════════════════════════════════════════════"
-echo ""
-
-# If command provided, execute it
-if [ $# -gt 0 ]; then
-    exec "$@"
-else
-    /bin/bash
-fi
-ENTRYPOINT
-
-chmod +x /docker-entrypoint.sh
+# Create a simple entrypoint script
+RUN echo '#!/bin/bash' > /docker-entrypoint.sh && \
+    echo 'set -e' >> /docker-entrypoint.sh && \
+    echo 'echo "Mega-OS Build Container"' >> /docker-entrypoint.sh && \
+    echo 'exec "$@"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["/bin/bash"]
-
-# Build labels
 LABEL org.opencontainers.image.version="1.0.0"
 LABEL org.opencontainers.image.url="https://github.com/karthirangani2016/Mega-OS"
 LABEL org.opencontainers.image.vendor="Mega-OS Team"
