@@ -1,0 +1,91 @@
+name: Build and publish rootfs image
+
+on:
+  workflow_dispatch: {}
+
+env:
+  MAX_PUSH_BYTES: 94371840 # 90 MiB - threshold to allow committing into repo
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make rootfs image
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap qemu-user-static binfmt-support rsync
+          chmod +x build/make_rootfs_image.sh
+          ./build/make_rootfs_image.sh
+
+      - name: Compute artifact size
+        id: compute_size
+        run: |
+          FILE=output/mega-os-rootfs.img.gz
+          if [ ! -f "$FILE" ]; then echo "FILE_MISSING=1" >> $GITHUB_OUTPUT; exit 0; fi
+          SIZE_BYTES=$(stat -c%s "$FILE")
+          echo "size=$SIZE_BYTES"
+          echo "size=$SIZE_BYTES" >> $GITHUB_OUTPUT
+
+      - name: Decide publish method
+        id: decide
+        run: |
+          FILE=output/mega-os-rootfs.img.gz
+          if [ ! -f "$FILE" ]; then echo "no_file=true" > /tmp/publish_state; exit 0; fi
+          SIZE_BYTES=$(stat -c%s "$FILE")
+          echo "Artifact size: $SIZE_BYTES bytes"
+          if [ "$SIZE_BYTES" -le $MAX_PUSH_BYTES ]; then
+            echo "method=commit" > /tmp/publish_state
+          else
+            echo "method=release" > /tmp/publish_state
+          fi
+
+      - name: Commit artifact into repo (if small)
+        if: success() && steps.decide.outputs == '' || always()
+        run: |
+          if [ -f /tmp/publish_state ] && grep -q "method=commit" /tmp/publish_state; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            mkdir -p output
+            git add output/mega-os-rootfs.img.gz || true
+            git commit -m "ci: add rootfs image (auto)" || echo "Nothing to commit"
+            git push origin HEAD:main || echo "Push failed"
+          else
+            echo "Skipping commit step"
+          fi
+
+      - name: Create Release and upload asset (if large)
+        if: always()
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          tag_name: ci-rootfs-${{ github.run_id }}
+          release_name: CI rootfs ${{ github.run_id }}
+          body: Rootfs image built by CI
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset (if large)
+        if: always()
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: output/mega-os-rootfs.img.gz
+          asset_name: mega-os-rootfs.img.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          if [ -f /tmp/publish_state ]; then
+            cat /tmp/publish_state || true
+          fi
+          echo "Artifacts available as workflow artifacts or release assets."

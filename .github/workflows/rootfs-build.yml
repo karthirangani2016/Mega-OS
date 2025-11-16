@@ -1,0 +1,30 @@
+name: Rootfs-only image build
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  rootfs-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap qemu-user-static binfmt-support rsync
+
+      - name: Run rootfs image creation script
+        run: |
+          chmod +x build/make_rootfs_image.sh
+          ./build/make_rootfs_image.sh
+
+      - name: Upload rootfs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-os-rootfs
+          path: |
+            output/mega-os-rootfs.img
+            output/mega-os-rootfs.img.gz

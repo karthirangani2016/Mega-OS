@@ -40,6 +40,20 @@ docker run --rm -it -v "$PWD":/workspace -w /workspace mega-os-build /bin/bash
 ./build/build_image.sh
 ```
 
+### 3.b Option C: Automated Docker helper (recommended)
+
+Use the included helper script to build the Docker image and run the Mega-OS build inside a container. This automates mounting the workspace and calling the build script.
+
+```bash
+chmod +x build/docker_build.sh
+./build/docker_build.sh mega-os-build
+```
+
+Notes:
+- The helper will build the Docker image from `./Dockerfile`, then run `./build/build_image.sh` inside the container with the repository mounted at `/workspace`.
+- Make sure Docker is installed and you have enough disk space (~20GB) for the Armbian build process.
+
+
 ### 4. Flash to device
 
 ```bash

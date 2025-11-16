@@ -59,7 +59,7 @@ chroot "$ROOTFS_DIR" apt-get install -y \
 
 # ===== FEATURE GROUP 7: File Management (5 features) =====
 log_action "Installing File Management Tools..."
-chroot "$ROOTFS_DIR" apt-get install -y \
+chroot "$ROOTFS_DIR" apt-get install -y 
   ranger midnight-commander \
   locate mlocate \
   rsync rclone 2>&1 | tee -a "$LOG_FILE"

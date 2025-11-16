@@ -1,0 +1,75 @@
+name: Build rootfs and combine with boot (boot tarball required)
+
+on:
+  workflow_dispatch:
+    inputs:
+      boot_tarball_url:
+        description: 'URL to a boot tarball (kernel/DTB/boot files). Example: https://example.com/armbian-boot.tar.gz'
+        required: true
+
+jobs:
+  build-and-combine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends debootstrap qemu-user-static binfmt-support rsync sfdisk dosfstools e2fsprogs curl
+
+      - name: Build rootfs
+        run: |
+          chmod +x build/make_rootfs_image.sh
+          ./build/make_rootfs_image.sh
+
+      - name: Combine rootfs + boot
+        run: |
+          chmod +x build/make_bootable_image.sh
+          ./build/make_bootable_image.sh "${{ github.event.inputs.boot_tarball_url }}"
+
+      - name: Upload full image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-os-full-image
+          path: |
+            output/mega-os-s905x2-full.img
+            output/mega-os-s905x2-full.img.gz
+
+      - name: Split image into 4GB parts for phone download
+        if: always()
+        run: |
+          if [ -f output/mega-os-s905x2-full.img.gz ]; then
+            chmod +x build/split_image.sh
+            ./build/split_image.sh output/mega-os-s905x2-full.img.gz 4G
+          else
+            echo "No final image to split"
+          fi
+
+      - name: Upload split parts artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-os-full-image-parts
+          path: |
+            output/mega-os-s905x2-full.img.gz.part*
+            output/mega-os-s905x2-full.img.gz.parts.sha256
+
+      - name: Create release and upload (optional)
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ci-mega-os-full-${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.softprops.outputs.upload_url }}
+          asset_path: output/mega-os-s905x2-full.img.gz
+          asset_name: mega-os-s905x2-full.img.gz
+          asset_content_type: application/gzip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

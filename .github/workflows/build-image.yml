@@ -1,0 +1,46 @@
+name: Build Mega-OS image (cloud)
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+
+jobs:
+  build-image:
+    name: Build image (may be long-running)
+    runs-on: ubuntu-latest
+    timeout-minutes: 720
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t mega-os-build .
+
+      - name: Run Mega-OS build inside container
+        env:
+          GITHUB_ACTIONS: true
+        run: |
+          # Run with workspace mounted; this will execute ./build/build_image.sh inside container
+          docker run --rm -v "$GITHUB_WORKSPACE":/workspace -w /workspace mega-os-build \
+            /bin/bash -lc "chmod +x ./build/*.sh && ./build/build_image.sh || true"
+
+      - name: List output directory (for logs)
+        run: ls -la output || true
+
+      - name: Upload image artifact(s)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-os-output
+          path: |
+            output/mega-os-s905x2.img
+            output/mega-os-s905x2.img.gz
+            output/mega-os-s905x2.tar.gz
+            build/logs/**
+
+      - name: Done
+        run: echo "Build job completed (check artifacts). If the build failed due to resource limits, consider running on a larger self-hosted runner or building only the rootfs."
