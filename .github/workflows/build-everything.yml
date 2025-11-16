@@ -20,8 +20,8 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y --no-install-recommends \
             debootstrap qemu-user-static binfmt-support rsync \
-            dosfstools e2fsprogs sfdisk util-linux fdisk \
-            curl wget gzip coreutils
+            dosfstools e2fsprogs util-linux fdisk \
+            curl wget gzip coreutils parted
 
       - name: Build rootfs image
         run: |

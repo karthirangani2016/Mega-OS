@@ -56,15 +56,12 @@ fallocate -l "$TOTAL_SIZE" "$FINAL_IMG"
 echo "Partitioning image: p1 FAT32 (256MB), p2 ext4 (rest)"
 SECTOR_SIZE=512
 BOOT_SECTORS=$((BOOT_SIZE_BYTES / SECTOR_SIZE))
-cat > /tmp/part.sfdisk <<EOF
-label: dos
-label-id: 0x11112222
-unit: sectors
-2048,$BOOT_SECTORS,c
-$((2048 + BOOT_SECTORS)),,83
-EOF
 
-sudo sfdisk "$FINAL_IMG" < /tmp/part.sfdisk
+# Use parted (more reliable than sfdisk)
+sudo parted -s "$FINAL_IMG" mklabel msdos
+sudo parted -s "$FINAL_IMG" mkpart primary fat32 2048s $((2048 + BOOT_SECTORS))s
+sudo parted -s "$FINAL_IMG" mkpart primary ext4 $((2048 + BOOT_SECTORS))s 100%
+sudo parted -s "$FINAL_IMG" set 1 boot on
 
 echo "Setting up loop device for image..."
 LOOP=$(sudo losetup --show -fP "$FINAL_IMG")
