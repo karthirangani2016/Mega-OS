@@ -1,0 +1,100 @@
+name: Build Everything (no Docker) - Full bootable image
+
+on:
+  workflow_dispatch:
+    inputs:
+      boot_tarball_url:
+        description: 'URL to boot tarball (kernel/DTB/boot files) - leave empty for rootfs only'
+        required: false
+
+jobs:
+  build-all:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install all dependencies (no Docker)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends \
+            debootstrap qemu-user-static binfmt-support rsync \
+            dosfstools e2fsprogs sfdisk util-linux fdisk \
+            curl wget gzip coreutils
+
+      - name: Build rootfs image
+        run: |
+          chmod +x build/make_rootfs_image.sh
+          ./build/make_rootfs_image.sh
+
+      - name: Combine with boot (if URL provided)
+        if: github.event.inputs.boot_tarball_url != ''
+        run: |
+          chmod +x build/make_bootable_image.sh
+          ./build/make_bootable_image.sh "${{ github.event.inputs.boot_tarball_url }}"
+
+      - name: Split image into 4GB parts (if full image exists)
+        if: always()
+        run: |
+          if [ -f output/mega-os-s905x2-full.img.gz ]; then
+            chmod +x build/split_image.sh
+            ./build/split_image.sh output/mega-os-s905x2-full.img.gz 4G
+          elif [ -f output/mega-os-rootfs.img.gz ]; then
+            echo "Only rootfs available (no boot tarball provided)"
+          fi
+
+      - name: List all outputs
+        run: ls -lh output/ || true
+
+      - name: Delete old 'latest' release
+        continue-on-error: true
+        run: |
+          gh release delete latest --yes || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create or update 'latest' release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          name: Latest Mega-OS Build
+          body: |
+            **Latest Mega-OS Build** (auto-updated)
+            
+            If boot tarball was provided:
+            - `mega-os-s905x2-full.img.gz` — Full bootable image (compressed)
+            - `mega-os-s905x2-full.img.gz.part*` — Split parts (4GB each for phone)
+            - `mega-os-s905x2-full.img.gz.parts.sha256` — Checksums
+            
+            Otherwise:
+            - `mega-os-rootfs.img.gz` — Base rootfs only (combine with boot files later)
+            
+            **Flash on phone (Termux):**
+            ```bash
+            cat mega-os-*.part* > mega-os.img.gz 2>/dev/null || true
+            sha256sum -c *.sha256
+            gunzip mega-os*.img.gz
+            # Use EtchDroid to flash to SD
+            ```
+            
+            **Flash on PC (Linux/macOS):**
+            ```bash
+            gunzip mega-os*.img.gz
+            sudo dd if=mega-os*.img of=/dev/sdX bs=4M status=progress conv=fsync
+            ```
+          draft: false
+          prerelease: false
+          files: |
+            output/mega-os-s905x2-full.img.gz
+            output/mega-os-s905x2-full.img.gz.part*
+            output/mega-os-s905x2-full.img.gz.parts.sha256
+            output/mega-os-rootfs.img.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mega-os-build
+          path: output/
