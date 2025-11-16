@@ -100,9 +100,32 @@ echo "Extracting boot files into boot partition..."
 sudo tar -xpf "$BOOT_TAR" -C "$MBOOT" 2>/dev/null || echo "Warning: boot tarball extraction had issues"
 
 echo "Copying rootfs into root partition..."
-# Simple copy method (more reliable than rsync in constrained CI)
-if [ -d "$ROOTFS_DIR" ]; then
-  sudo cp -a "$ROOTFS_DIR"/* "$MROOT/" 2>/dev/null || echo "Warning: some files may not have copied"
+SRC_LOOP=""
+SRC_MNT=""
+# Determine source of rootfs: prefer a rootfs image, else fallback to output/rootfs directory
+if [ -f "$ROOTFS_IMG" ]; then
+  echo "Mounting rootfs image $ROOTFS_IMG"
+  SRC_LOOP=$(sudo losetup --show -fP "$ROOTFS_IMG")
+  SRC_MNT=$(mktemp -d)
+  sudo mount "$SRC_LOOP" "$SRC_MNT"
+  ROOTFS_DIR="$SRC_MNT"
+elif [ -d "$OUTPUT_DIR/rootfs" ]; then
+  ROOTFS_DIR="$OUTPUT_DIR/rootfs"
+else
+  ROOTFS_DIR=""
+fi
+
+if [ -n "$ROOTFS_DIR" ] && [ -d "$ROOTFS_DIR" ]; then
+  sudo cp -a "$ROOTFS_DIR"/. "$MROOT/" 2>/dev/null || echo "Warning: some files may not have copied"
+else
+  echo "Warning: no rootfs found to copy (skipping)"
+fi
+
+# Cleanup mounted rootfs image if we mounted one
+if [ -n "$SRC_MNT" ]; then
+  sudo umount "$SRC_MNT" || true
+  sudo losetup -d "$SRC_LOOP" || true
+  rm -rf "$SRC_MNT"
 fi
 
 echo "Syncing and cleaning up mounts..."
