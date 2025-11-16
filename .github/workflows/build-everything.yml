@@ -1,5 +1,8 @@
 name: Build Everything (no Docker) - Full bootable image
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
     inputs:

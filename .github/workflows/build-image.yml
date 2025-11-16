@@ -1,4 +1,4 @@
-name: Build Mega-OS image (cloud)
+name: Build rootfs image only (reliable)
 
 on:
   workflow_dispatch: {}
@@ -6,41 +6,31 @@ on:
     branches: [ main ]
 
 jobs:
-  build-image:
-    name: Build image (may be long-running)
+  build-rootfs:
+    name: Build rootfs (simple, reliable)
     runs-on: ubuntu-latest
-    timeout-minutes: 720
+    timeout-minutes: 180
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
+      - name: Install dependencies
         run: |
-          docker build -t mega-os-build .
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends debootstrap qemu-user-static binfmt-support rsync
 
-      - name: Run Mega-OS build inside container
-        env:
-          GITHUB_ACTIONS: true
+      - name: Build rootfs image
         run: |
-          # Run with workspace mounted; this will execute ./build/build_image.sh inside container
-          docker run --rm -v "$GITHUB_WORKSPACE":/workspace -w /workspace mega-os-build \
-            /bin/bash -lc "chmod +x ./build/*.sh && ./build/build_image.sh || true"
+          chmod +x build/make_rootfs_image.sh
+          ./build/make_rootfs_image.sh
 
-      - name: List output directory (for logs)
-        run: ls -la output || true
+      - name: List output
+        run: ls -lh output/ || true
 
-      - name: Upload image artifact(s)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mega-os-output
+          name: mega-os-rootfs
           path: |
-            output/mega-os-s905x2.img
-            output/mega-os-s905x2.img.gz
-            output/mega-os-s905x2.tar.gz
-            build/logs/**
-
-      - name: Done
-        run: echo "Build job completed (check artifacts). If the build failed due to resource limits, consider running on a larger self-hosted runner or building only the rootfs."
+            output/mega-os-rootfs.img
+            output/mega-os-rootfs.img.gz
